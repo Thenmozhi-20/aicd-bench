@@ -1,0 +1,12 @@
+numpy
+pandas
+scikit-learn
+catboost
+datasets
+pyarrow
+tree-sitter
+tree-sitter-language-pack
+torch
+transformers>=4.41
+accelerate
+google-genai   # only for Gemini zero-shot

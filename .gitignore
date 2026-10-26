@@ -1,0 +1,15 @@
+venv/
+.venv/
+data/
+toy/
+__pycache__/
+*.pyc
+results/ckpt_*/
+patch.py
+last_shard.py
+inspect_dataset.py
+h1.py
+h2.py
+h3.py
+mycode.py
+*.lnk
