@@ -24,10 +24,17 @@ class CodeT5pClassifier(nn.Module):
     def __init__(self, name, n_classes):
         super().__init__()
         self.enc = AutoModel.from_pretrained(name, trust_remote_code=True)
-        self.head = nn.Linear(self.enc.config.embed_dim, n_classes)
+        dim = getattr(self.enc.config, "embed_dim", getattr(self.enc.config, "hidden_size", 768))
+        self.head = nn.Linear(dim, n_classes)
 
     def forward(self, input_ids=None, attention_mask=None, labels=None):
-        emb = self.enc(input_ids=input_ids, attention_mask=attention_mask)
+        out = self.enc(input_ids=input_ids, attention_mask=attention_mask)
+        if hasattr(out, "last_hidden_state"):
+            emb = out.last_hidden_state[:, 0, :]
+        elif isinstance(out, torch.Tensor) and out.dim() == 3:
+            emb = out[:, 0, :]
+        else:
+            emb = out
         logits = self.head(emb)
         loss = nn.functional.cross_entropy(logits, labels) if labels is not None else None
         return {"loss": loss, "logits": logits} if loss is not None else {"logits": logits}

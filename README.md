@@ -30,13 +30,14 @@ broken down by them (this is how the seen/unseen language & domain analysis of T
     python run.py classical --task 1 --train toy/train.parquet --val toy/val.parquet --test toy/test.parquet --model lr --features tfidf
 
     # paper-style baselines
-    python run.py classical --task 1 --train ... --test ... --model all --features all --max_train 100000
-    python run.py encoder   --task 3 --model modernbert --train ... --val ... --test ...   # 3 epochs, eff. batch 64, 512 tokens
-    python run.py fastdetect --task 1 --val ... --test ...
-    GEMINI_API_KEY=... python run.py llm --task 1 --test ... --backend gemini --mode cot
-    python run.py llm --task 1 --test ... --backend hf --llm google/gemma-3-27b-it --mode zs
+    python run.py classical --task 1 --train data/T1_train.parquet --test data/T1_test.parquet --model all --features all --max_train 60000
+    python run.py classical --task 1 --train data/T1_train.parquet --test data/T1_test.parquet --model svm --features tfidf --explain  # App. D.1 token analysis
+    python run.py encoder   --task 3 --model modernbert --train data/T3_train.parquet --val data/T3_validation.parquet --test data/T3_test.parquet   # 3 epochs, eff. batch 64, 512 tokens
+    python run.py fastdetect --task 1 --val data/T1_validation.parquet --test data/T1_test.parquet
+    GEMINI_API_KEY=... python run.py llm --task 1 --test data/T1_test.parquet --backend gemini --mode cot
+    python run.py llm --task 1 --test data/T1_test.parquet --backend hf --llm google/gemma-3-27b-it --mode zs
 
-Results are written to `results/task{N}_{method}.json`.
+Results are written to `results/task{N}_{method}.json` (including Macro-F1, row-normalized confusion matrix matching Figs 1,2,7,9, per-language breakdown matching Fig 4, and Table 5 Seen/Unseen distribution shift matrix).
 
 ## Notes / caveats
 * Full-scale training (500K–900K samples) needs a GPU; use `--max_train` to subsample classical models (SVD/AST on 500K files is slow).

@@ -44,17 +44,33 @@ def finish(a, tag, te, ls, pred):
 
 
 def cmd_classical(a):
-    from aicd.classical import run_classical, dummy_baselines
+    from aicd.classical import dummy_baselines, explain_model_features, make_model
+    from aicd.features import FeatureBuilder
     tr, va, te, ls = load(a)
     ytr = ls.encode(tr["label"])
     for k, v in dummy_baselines(ytr, len(te), ls.n).items():
         print(f"== {k}"); finish(a, k, te, ls, v)
     models = ["lr", "svm", "catboost"] if a.model == "all" else [a.model]
     feats = ["tfidf", "ast", "both"] if a.features == "all" else [a.features]
+
+    # Pre-extract features once per feature representation to avoid repeating 9 times
+    cache = {}
+    for f in feats:
+        print(f"\n--- Extracting Features: {f} ---")
+        fb = FeatureBuilder(f)
+        Xtr = fb.fit_transform(tr)
+        Xte = fb.transform(te)
+        cache[f] = (fb, Xtr, Xte)
+
     for m in models:
         for f in feats:
-            print(f"== {m} / {f}")
-            pred = run_classical(tr, te, ytr, ls.n, m, f)
+            print(f"\n== Training & Evaluating: {m} / {f} ==")
+            fb, Xtr, Xte = cache[f]
+            clf = make_model(m, ls.n)
+            clf.fit(Xtr, ytr)
+            pred = np.asarray(clf.predict(Xte)).reshape(-1).astype(int)
+            if a.explain and m in ("svm", "lr") and f == "tfidf":
+                explain_model_features(clf, fb)
             finish(a, f"{m}_{f}", te, ls, pred)
 
 
@@ -104,6 +120,7 @@ def main():
     p = sub.add_parser("classical"); common(p)
     p.add_argument("--model", default="all", choices=["lr", "svm", "catboost", "all"])
     p.add_argument("--features", default="all", choices=["tfidf", "ast", "both", "all"])
+    p.add_argument("--explain", action="store_true", help="Print top N-gram features via SVD back-projection (App. D.1)")
     p.set_defaults(fn=cmd_classical)
     p = sub.add_parser("encoder"); common(p)
     p.add_argument("--model", required=True, choices=["codebert", "codet5p", "unixcoder", "modernbert", "roberta", "deberta"])
